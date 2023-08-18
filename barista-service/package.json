@@ -1,0 +1,36 @@
+{
+  "name": "barista-service",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "tsx watch src/server.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@fastify/compress": "^6.4.0",
+    "@fastify/formbody": "^7.4.0",
+    "@fastify/static": "^6.9.0",
+    "@fastify/view": "^8.0.0",
+    "axios": "^1.4.0",
+    "dotenv": "^16.3.1",
+    "ejs": "^3.1.9",
+    "fastify": "^4.21.0",
+    "fastify-sse-v2": "^3.1.2",
+    "kafkajs": "^2.2.4",
+    "nanoid": "^4.0.2",
+    "pino-pretty": "^10.2.0"
+  },
+  "devDependencies": {
+    "@types/axios": "^0.14.0",
+    "@types/ejs": "^3.1.2",
+    "@types/kafkajs": "^1.9.0",
+    "@types/nanoid": "^3.0.0",
+    "@types/node": "^20.5.0",
+    "tsx": "^3.12.7",
+    "typescript": "^5.1.6"
+  }
+}

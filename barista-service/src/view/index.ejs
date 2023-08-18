@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Queue</title>
+
+    <link rel="stylesheet" type="text/css"
+          href="https://cdnjs.cloudflare.com/ajax/libs/patternfly/3.24.0/css/patternfly.min.css">
+    <link rel="stylesheet" type="text/css"
+          href="https://cdnjs.cloudflare.com/ajax/libs/patternfly/3.24.0/css/patternfly-additions.min.css">
+</head>
+<body>
+
+<div class="container">
+
+    <h1>Order</h1>
+
+    <form id="orderForm" class="form-horizontal">
+        <div class="form-group">
+            <label class="col-md-2 control-label" for="customerName">Name</label>
+            <div class="col-md-6">
+                <input type="text" id="customerName" class="form-control">
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-md-2 control-label" for="orderMethod">Order method</label>
+            <div class="col-md-10">
+                <select id="orderMethod">
+                    <option value="http">HTTP</option>
+                    <option value="messaging">Messaging / Kafka</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-md-2 control-label" for="product">Product</label>
+            <div class="col-md-10">
+                <select id="product">
+                    <option value="frappuccino">Frappuccino</option>
+                    <option value="chai">Chai</option>
+                    <option value="hot-chocolate">Hot Chocolate</option>
+                    <option value="latte">Latte</option>
+                    <option value="espresso">Espresso</option>
+                    <option value="mocha">Mocha</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-md-10 col-md-offset-2">
+                <button id="order-button" type="submit" class="btn btn-primary">Place order</button>
+            </div>
+        </div>
+    </form>
+
+</div>
+
+<div class="container" id="order-result-message"></div>
+
+<div class="container">
+
+    <h1>Queue</h1>
+
+    <table class="table table-striped">
+        <thead class="thead-dark">
+        <tr>
+            <th>Customer</th>
+            <th>Product</th>
+            <th>Prepared By</th>
+            <th>State</th>
+        </tr>
+        </thead>
+        <tbody>
+
+        </tbody>
+    </table>
+
+</div>
+
+
+
+
+
+</body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/patternfly/3.24.0/js/patternfly.min.js"></script>
+<script>
+    $("#orderForm").submit( (event)=>{
+    event.preventDefault()
+    const method = $('#orderMethod option:selected').val()
+    const order = {
+        name: $('#customerName').val(),
+        product: $('#product option:selected').val()
+    }
+    //alert($('#customerName').val())
+    if( method === 'http'){
+        const state ={
+            custumer: order.name,
+            beverage: order.product,
+            preparationState: 'IN_PROGRESS'
+        }
+        $('tbody').prepend(line(state))
+        $('#order-button').addClass('disabled').attr('disabled', true)
+    }
+
+    $.ajax({
+        url: '/'+ method,
+        type: 'POST',
+        data: JSON.stringify(order),
+        contentType: 'application/json',
+        cache: 'false'
+    }).done((response)=>{
+        if(method === 'http'){
+            const state = {
+                orderId: response.orderId,
+                beverage: response.beverage,
+                customer: response.custumer,
+                preparedBy:response.preparedBy,
+                preparationState: response.preparation
+            }
+            $('tbody').replaceWith(line(state))
+            $('#order-button').removeClass('disabled').removeAttr('disabled')
+
+        }
+    }).fail((error)=>{
+            $('#order-result-message').append("<div class='alert alert-danger alert-dismissable'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span class='pficon pficon-close'></span></button><span class='pficon pficon-error-circle-o'></span><strong>Error</strong>" + error.responseText + "</div>")
+            $('tbody last').remove()
+            $('#order-button').removeClass('disabled').removeAttr('disabled')
+            console.log(error)
+    })
+
+
+
+})
+if( typeof(EventSource) === 'undefined') {
+        alert('evento nao suportado pelo navegador')
+    }else{
+        const source = new EventSource('/queue',{
+         'Content-Type': 'application/json'
+        })
+
+    source.addEventListener('data',(e)=>{
+        alert(JSON.stringify(e))
+    })
+    source.onmessage = (e)=>{
+        alert(e)
+        if(e.data === '{}'){
+            return
+        }
+        
+        alert(e.data)
+        const beverage = JSON.parse(e.data)
+        if(beverage.preparationState === 'IN_QUEUE')
+            $('tbody').append(line(beverage))
+        if(beverage.preparationState === 'READY')
+            $('#'+ beverage.orderId).replaceWith(line(beverage))
+    }
+
+    }
+    
+function line(order){
+    const id = order.orderId;
+    const product = order.beverage;
+    const custumer = order.custumer
+    let barista;
+    if(order.preparedBy) barista = order.preparedBy
+
+    return `<tr id="${id}">
+        <td> ${custumer}</td>
+        <td>${product}</td>
+        <td>${barista}</td>
+        <td>${order.preparation}</td>
+        </tr>`;
+}
+
+</script>
+</html>
